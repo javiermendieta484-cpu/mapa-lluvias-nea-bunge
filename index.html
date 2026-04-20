@@ -1,0 +1,84 @@
+import pandas as pd
+import folium
+from folium.features import DivIcon
+from folium.plugins import FloatImage
+
+# Cargar datos
+df = pd.read_csv('lluvias.csv')
+print(f"Se cargaron {len(df)} localidades")
+
+# Crear mapa con estilo más bonito
+m = folium.Map(
+    location=[-28.0, -61.5],
+    zoom_start=7.8,
+    tiles="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",   # ← Estilo Google Maps
+    attr="Google Maps",
+    name="Google Maps Style"
+)
+
+# Función para elegir color según cantidad de lluvia
+def get_color(lluvia):
+    if lluvia >= 100: return "#d73027"   # Rojo - mucha lluvia
+    elif lluvia >= 50: return "#fc8d59"  # Naranja
+    elif lluvia >= 25: return "#fee08b"  # Amarillo
+    elif lluvia >= 10: return "#91cf60"  # Verde claro
+    else: return "#1a9850"               # Verde oscuro - poca lluvia
+
+# Agregar círculos y etiquetas
+for idx, row in df.iterrows():
+    color = get_color(row['lluvia_mm'])
+    
+    # Círculo con color según lluvia
+    folium.CircleMarker(
+        location=[row['lat'], row['lon']],
+        radius=9,
+        popup=f"<b>{row['localidad']}</b><br><b>{row['lluvia_mm']} mm</b>",
+        color="black",
+        weight=1.5,
+        fill=True,
+        fill_color=color,
+        fill_opacity=0.85
+    ).add_to(m)
+    
+    # Etiqueta más limpia
+    folium.Marker(
+        location=[row['lat'], row['lon']],
+        icon=DivIcon(
+            icon_size=(80, 25),
+            icon_anchor=(5, 18),
+            html=f'''
+                <div style="font-size: 9px; 
+                            font-weight: bold; 
+                            color: black; 
+                            background: white; 
+                            padding: 2px 5px; 
+                            border: 1px solid black; 
+                            border-radius: 4px;
+                            text-align: center;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                    {row['lluvia_mm']}<br>
+                    <span style="font-size:7.5px">{row['localidad']}</span>
+                </div>
+            '''
+        )
+    ).add_to(m)
+
+# Agregar leyenda
+legend_html = '''
+<div style="position: fixed; bottom: 50px; left: 50px; width: 160px; height: 140px; 
+            background-color: white; border:2px solid grey; z-index:9999; font-size:10px;
+            padding: 10px; border-radius: 6px; box-shadow: 0 0 8px rgba(0,0,0,0.3);">
+    <b>mm de lluvia</b><br>
+    <i style="background:#d73027;width:18px;height:18px;display:inline-block;"></i> ≥ 100 mm<br>
+    <i style="background:#fc8d59;width:18px;height:18px;display:inline-block;"></i> 50 - 99 mm<br>
+    <i style="background:#fee08b;width:18px;height:18px;display:inline-block;"></i> 25 - 49 mm<br>
+    <i style="background:#91cf60;width:18px;height:18px;display:inline-block;"></i> 10 - 24 mm<br>
+    <i style="background:#1a9850;width:18px;height:18px;display:inline-block;"></i> &lt; 10 mm
+</div>
+'''
+m.get_root().html.add_child(folium.Element(legend_html))
+
+# Guardar
+m.save('mapa_lluvias.html')
+print("¡Mapa mucho más bonito creado!")
+print("Abre el archivo 'mapa_lluvias.html'")
