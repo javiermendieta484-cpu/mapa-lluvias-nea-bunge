@@ -1,0 +1,52 @@
+import pandas as pd
+import folium
+from folium.features import DivIcon
+
+# Cargar los datos
+df = pd.read_csv('lluvias.csv')
+
+print(f"Se cargaron {len(df)} localidades")
+
+# Crear el mapa
+m = folium.Map(location=[-28.0, -61.5], zoom_start=7.5, tiles="CartoDB positron")
+
+for idx, row in df.iterrows():
+    # Círculo
+    folium.CircleMarker(
+        location=[row['lat'], row['lon']],
+        radius=7,
+        popup=f"<b>{row['localidad']}</b><br><b>{row['lluvia_mm']} mm</b>",
+        color='darkblue',
+        fill=True,
+        fill_color='blue',
+        fill_opacity=0.8
+    ).add_to(m)
+    
+    # Etiqueta pequeña con nombre + mm
+    folium.Marker(
+        location=[row['lat'], row['lon']],
+        icon=DivIcon(
+            icon_size=(90, 30),           # más pequeño
+            icon_anchor=(5, 20),          # ajustado
+            html=f'''
+                <div style="font-size: 8.5px; 
+                            font-weight: bold; 
+                            color: black; 
+                            background: rgba(255,255,255,0.85); 
+                            padding: 1px 3px; 
+                            border: 1px solid #333; 
+                            border-radius: 3px;
+                            line-height: 1.1;
+                            white-space: nowrap;">
+                    {row['localidad']}<br>
+                    {row['lluvia_mm']} mm
+                </div>
+            '''
+        )
+    ).add_to(m)
+
+# Guardar
+m.save('mapa_lluvias.html')
+
+print("¡Mapa actualizado con etiquetas más pequeñas!")
+print("Abre el archivo 'mapa_lluvias.html'")
